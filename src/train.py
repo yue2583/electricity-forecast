@@ -3,7 +3,7 @@ import pandas as pd
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error,mean_absolute_percentage_error
 from log import log
 import joblib
 from common import data_preprocess
@@ -145,11 +145,20 @@ def model_train(data):
     mae_train = mean_absolute_error(y_true=y_train, y_pred=y_pred_train)
     mse_test = mean_squared_error(y_true=y_test, y_pred=y_pred_test)
     mae_test = mean_absolute_error(y_true=y_test, y_pred=y_pred_test)
+    mpe_test = mean_absolute_percentage_error(y_true=y_test, y_pred=y_pred_test)
     log.info("=========================模型训练完成=============================")
     log.info(f"模型在训练集上的均方误差：{mse_train}")
     log.info(f"模型在训练集上的平均绝对误差：{mae_train}")
     log.info(f"模型在测试集上的均方误差：{mse_test}")
     log.info(f"模型在测试集上的平均绝对误差：{mae_test}")
+    log.info(f"模型在测试集上的平均绝对百分比误差：{mpe_test}")
+    """
+    2025-03-26 07:53:03 - app.log - INFO - 模型在训练集上的均方误差：3267.8657894788944 (train.py:150)
+2025-03-26 07:53:03 - app.log - INFO - 模型在训练集上的平均绝对误差：35.06779752549508 (train.py:151)
+2025-03-26 07:53:03 - app.log - INFO - 模型在测试集上的均方误差：6211.6812373518 (train.py:152)
+2025-03-26 07:53:03 - app.log - INFO - 模型在测试集上的平均绝对误差：46.14673029554262 (train.py:153)
+2025-03-26 07:53:03 - app.log - INFO - 模型在测试集上的平均绝对百分比误差：0.07532417457145434 (train.py:154)
+    """
     # 5.模型保存
     joblib.dump(xgb, '../model/xgb.pkl')
 

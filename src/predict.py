@@ -5,6 +5,7 @@ from log import Logger
 from common import data_preprocess
 from train import feature_engineering
 import matplotlib.ticker as mick
+from sklearn.metrics import mean_absolute_error
 import joblib
 from log import log
 import matplotlib.pyplot as plt
@@ -66,6 +67,9 @@ def predict(data):
 
     result = pd.concat([time, true_val, pred_val], axis=1)
     result.columns = ['时间', '真实值', '预测值']
+    mae_score = mean_absolute_error(result['真实值'], result['预测值'])
+    log.info(f"模型对新数据进行预测的平均绝对误差：{mae_score}")
+    # 模型对新数据进行预测的平均绝对误差：56.62082605471557 (predict.py:71)
     log.info(result)
     return result
 
