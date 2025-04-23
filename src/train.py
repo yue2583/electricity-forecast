@@ -3,7 +3,7 @@ import pandas as pd
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_squared_error, mean_absolute_error,mean_absolute_percentage_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
 from log import log
 import joblib
 from common import data_preprocess
@@ -17,7 +17,7 @@ class PowerLoadModel:
         self.data_source = data_preprocess(file_path)
 
 
-def ana_data(data):
+def ana_data(data: pd.DataFrame):
     """
     :param data: 数据源
     :return:
@@ -38,12 +38,12 @@ def ana_data(data):
     sub2.plot(month_avg['month'], month_avg['power_load'])
     sub2.set_title("按月分组折线图")
 
-    log.info('开始绘制按月分组折线图')
+    log.info('开始绘制按星期分组折线图')
     sub3 = fig.add_subplot(413)
     data['weekday'] = data['time'].apply(lambda x: pd.to_datetime(x).weekday() + 1)
     weekday_avg = data.groupby('weekday', as_index=False)['power_load'].mean()
     sub3.plot(weekday_avg['weekday'], weekday_avg['power_load'])
-    sub3.set_title('按工作日分组')
+    sub3.set_title('按星期分组')
 
     log.info('开始绘制按小时分组折线图')
     sub4 = fig.add_subplot(414)
@@ -54,7 +54,7 @@ def ana_data(data):
     plt.savefig('../data/fig/analyze.png')
 
 
-def feature_engineering(data):
+def feature_engineering(data: pd.DataFrame):
     """
     增加月份，周几，小时特征
     增加前 n 小时的负载
@@ -99,7 +99,7 @@ def feature_engineering(data):
     log.info('特征合并')
     result = pd.concat([data, month_encoding, weekday_encoding, hour_encoding,
                         last_n_hour_load_data, last_day_time_data, ], axis=1)
-    result.dropna(inplace=True)
+    result = result.dropna()
     return result
 
 
@@ -111,33 +111,19 @@ def model_train(data):
 
     log.info('切分训练集，测试集')
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
-    # xgb = XGBRegressor()
-    # param_grid = {
-    #     'n_estimators': [50, 100, 150, 200],
-    #     'max_depth': [3, 6, 9],
-    #     'learning_rate': [0.1, 0.01]
-    # }
-    # grid_cv = GridSearchCV(estimator=xgb, param_grid=param_grid, cv=5)
-    # log.info('网格搜索，交叉验证')
-    # grid_cv.fit(x_train, y_train)
-    # log.info(grid_cv.best_estimator_)
-    # log.info(grid_cv.best_score_)
+    xgb = XGBRegressor()
+    param_grid = {
+        'n_estimators': [50, 100, 150, 200],
+        'max_depth': [3, 6, 9],
+        'learning_rate': [0.1, 0.01]
+    }
+    grid_cv = GridSearchCV(estimator=xgb, param_grid=param_grid, cv=5)
+    log.info('网格搜索，交叉验证')
+    grid_cv.fit(x_train, y_train)
+    log.info(grid_cv.best_params_)  # {'learning_rate': 0.1, 'max_depth': 6, 'n_estimators': 100}
+    log.info(grid_cv.best_score_)  # 0.8681287181558108
 
-    """
-    2025-03-25 20:47:31 - app.log - INFO - XGBRegressor(base_score=None, booster=None, callbacks=None,
-             colsample_bylevel=None, colsample_bynode=None,
-             colsample_bytree=None, device=None, early_stopping_rounds=None,
-             enable_categorical=False, eval_metric=None, feature_types=None,
-             feature_weights=None, gamma=None, grow_policy=None,
-             importance_type=None, interaction_constraints=None,
-             learning_rate=0.1, max_bin=None, max_cat_threshold=None,
-             max_cat_to_onehot=None, max_delta_step=None, max_depth=6,
-             max_leaves=None, min_child_weight=None, missing=nan,
-             monotone_constraints=None, multi_strategy=None, n_estimators=100,
-             n_jobs=None, num_parallel_tree=None, ...) (train.py:124)
-2025-03-25 20:47:31 - app.log - INFO - 0.8681287181558108 (train.py:125)
-    """
-    xgb = XGBRegressor(n_estimators=100, learning_rate=0.1, max_depth=6)
+    xgb = XGBRegressor(**grid_cv.best_params_)
     xgb.fit(x_train, y_train)
     y_pred_train = xgb.predict(x_train)
     y_pred_test = xgb.predict(x_test)
@@ -152,19 +138,13 @@ def model_train(data):
     log.info(f"模型在测试集上的均方误差：{mse_test}")
     log.info(f"模型在测试集上的平均绝对误差：{mae_test}")
     log.info(f"模型在测试集上的平均绝对百分比误差：{mpe_test}")
-    """
-    2025-03-26 07:53:03 - app.log - INFO - 模型在训练集上的均方误差：3267.8657894788944 (train.py:150)
-2025-03-26 07:53:03 - app.log - INFO - 模型在训练集上的平均绝对误差：35.06779752549508 (train.py:151)
-2025-03-26 07:53:03 - app.log - INFO - 模型在测试集上的均方误差：6211.6812373518 (train.py:152)
-2025-03-26 07:53:03 - app.log - INFO - 模型在测试集上的平均绝对误差：46.14673029554262 (train.py:153)
-2025-03-26 07:53:03 - app.log - INFO - 模型在测试集上的平均绝对百分比误差：0.07532417457145434 (train.py:154)
-    """
+
     # 5.模型保存
     joblib.dump(xgb, '../model/xgb.pkl')
 
 
 if __name__ == '__main__':
-    data = PowerLoadModel("../data/train.csv").data_source
-    # ana_data(data)
-    data = feature_engineering(data)
-    model_train(data)
+    _data = PowerLoadModel("../data/train.csv").data_source
+    # ana_data(_data)
+    _data = feature_engineering(_data)
+    model_train(_data)

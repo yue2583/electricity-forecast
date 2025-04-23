@@ -1,7 +1,4 @@
-import os
 import pandas as pd
-import datetime
-from log import Logger
 from common import data_preprocess
 from train import feature_engineering
 import matplotlib.ticker as mick
@@ -14,7 +11,7 @@ plt.rcParams['font.family'] = 'SimHei'
 plt.rcParams['font.size'] = 15
 
 
-def fill_order_lack_features(data):
+def fill_lack_features(data):
     month_features = [f'month_{i}' for i in range(1, 13)]
     for feature in month_features:
         if feature not in data.columns:
@@ -53,10 +50,10 @@ def prediction_plot(data):
     plt.savefig('../data/fig/预测效果.png')
 
 
-def predict(data):
+def do_predict(data):
     data = feature_engineering(data)
     data = data[pd.to_datetime(data['time']) > pd.to_datetime('2015-07-31 23:59:59')]
-    x = fill_order_lack_features(data)
+    x = fill_lack_features(data)
     model = joblib.load('../model/xgb.pkl')
     y = data.iloc[:, 1]
     y_pred = model.predict(x)
@@ -68,13 +65,12 @@ def predict(data):
     result = pd.concat([time, true_val, pred_val], axis=1)
     result.columns = ['时间', '真实值', '预测值']
     mae_score = mean_absolute_error(result['真实值'], result['预测值'])
-    log.info(f"模型对新数据进行预测的平均绝对误差：{mae_score}")
-    # 模型对新数据进行预测的平均绝对误差：56.62082605471557 (predict.py:71)
+    log.info(f"模型对新数据进行预测的平均绝对误差：{mae_score}")  # 56.62082605471557
     log.info(result)
     return result
 
 
 if __name__ == '__main__':
-    data = data_preprocess('../data/test.csv')
-    data = predict(data)
-    prediction_plot(data)
+    _data = data_preprocess('../data/test.csv')
+    _data = do_predict(_data)
+    prediction_plot(_data)
