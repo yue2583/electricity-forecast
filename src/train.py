@@ -145,6 +145,6 @@ def model_train(data):
 
 if __name__ == '__main__':
     _data = PowerLoadModel("../data/train.csv").data_source
-    # ana_data(_data)
-    _data = feature_engineering(_data)
-    model_train(_data)
+    ana_data(_data)
+    # _data = feature_engineering(_data)
+    # model_train(_data)

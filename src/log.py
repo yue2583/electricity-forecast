@@ -1,10 +1,13 @@
 import os
 import logging
 from logging.handlers import RotatingFileHandler
+import datetime
 
 
 class Logger:
-    def __init__(self, log_dir="../logs", log_file="app.log", max_bytes=5 * 1024 * 1024):
+    def __init__(self, log_dir="../logs",
+                 log_file=f"app_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log",
+                 max_bytes=5 * 1024 * 1024):
         """
         初始化日志模块。
 

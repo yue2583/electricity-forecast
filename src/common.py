@@ -14,7 +14,7 @@ def data_preprocess(path):
     data = pd.read_csv(path)
     data['time'] = pd.to_datetime(data['time']).dt.strftime('%Y-%m-%d %H:%M:%S')
     data = data.sort_values(by=['time'])
-    data = data.drop_duplicates()
+    data = data.drop_duplicates(subset=['time'])
     return data
 
 
